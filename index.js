@@ -2,7 +2,13 @@ const { Firestore } = require('@google-cloud/firestore');
 const WebSocket = require('ws');
 const express = require('express');
 
-const firestore = new Firestore();
+const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+// Initialize Firestore with explicit credentials
+const firestore = new Firestore({
+  credentials: credentials,
+  projectId: credentials.project_id, // Optional, but ensures correct project
+});
 const txCollection = firestore.collection('transfer_transactions');
 const lpCollection = firestore.collection('lp_and_transfers');
 const app = express();
