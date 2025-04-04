@@ -14,7 +14,6 @@ const lpCollection = firestore.collection('lp_and_transfers');
 const app = express();
 const port = process.env.PORT || 8080;
 
-// Event topics
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const CURVE_SWAP_TOPIC = '0x8b3e96f2b889fa771c53c981b40daf005f63f637f1869f707052d15a3dd97140';
 const UNISWAP_SWAP_TOPIC = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67';
@@ -71,7 +70,7 @@ async function fetchWithRetry(method, params, retries = 3, delay = 1000) {
         console.error(`Failed ${method} after ${retries} attempts: ${error.message}`);
         return null;
       }
-      await new Promise(resolve => setTimeout(resolve, delay * (attempt ** 1))); // Quadratic backoff
+      await new Promise(resolve => setTimeout(resolve, delay * (attempt ** 2))); // Quadratic backoff
     }
   }
 }
@@ -163,26 +162,6 @@ async function processEvent(logData, eventType) {
       bought_id: parseInt(dataHex.slice(128, 192), 16).toString(),
       tokens_bought: BigInt('0x' + dataHex.slice(192, 256)).toString(),
     };
-  } else if (eventType === 'Swap' && address === UNISWAP_POOL) {
-    const dataHex = logData.data.slice(2);
-    if (dataHex.length !== 320) { // 5 x 64 chars
-      console.error(`Invalid Uniswap Swap data length: ${dataHex.length}, tx: ${txHash}`, logData);
-      return { /* Skip or flag invalid event */ };
-    }
-    args = [
-      '0x' + logData.topics[1].slice(-40),
-      '0x' + logData.topics[2].slice(-40),
-      BigInt('0x' + dataHex.slice(0, 64)).toString(),
-      BigInt('0x' + dataHex.slice(64, 128)).toString(),
-      BigInt('0x' + dataHex.slice(128, 192)).toString(),
-      BigInt('0x' + dataHex.slice(192, 256)).toString(),
-      parseInt(dataHex.slice(256, 320), 16).toString(),
-    ];
-    // Validate tick
-    const tick = parseInt(dataHex.slice(256, 320), 16);
-    if (tick < -8388608 || tick > 8388607) {
-      console.error(`Invalid Uniswap tick: ${tick}, tx: ${txHash}`, logData);
-    }
   }
 
   const eventData = {
@@ -290,20 +269,20 @@ function attachWebSocketHandlers(ws) {
     );
 
     // Subscribe to Uniswap Swap events
-    ws.send(
-      JSON.stringify({
-        jsonrpc: "2.0",
-        id: 3,
-        method: "eth_subscribe",
-        params: [
-          "logs",
-          {
-            address: UNISWAP_POOL,
-            topics: [UNISWAP_SWAP_TOPIC],
-          },
-        ],
-      })
-    );
+    // ws.send(
+    //   JSON.stringify({
+    //     jsonrpc: "2.0",
+    //     id: 3,
+    //     method: "eth_subscribe",
+    //     params: [
+    //       "logs",
+    //       {
+    //         address: UNISWAP_POOL,
+    //         topics: [UNISWAP_SWAP_TOPIC],
+    //       },
+    //     ],
+    //   })
+    // );
   });
 
   ws.on("message", async (data) => {
@@ -364,17 +343,7 @@ function attachWebSocketHandlers(ws) {
           data: eventData,
         });
         console.log(`✅ Processed Curve Swap: ${txHash} | Pool: ${address}`);
-      } else if (eventSignature === UNISWAP_SWAP_TOPIC && address === UNISWAP_POOL) {
-        // Process Uniswap Swap event
-        const eventData = await processEvent(logData, 'Swap');
-        pendingWrites.push({
-          collection: lpCollection,
-          docId: `${txHash}-${logData.logIndex}`,
-          data: eventData,
-        });
-        console.log(`✅ Processed Uniswap Swap: ${txHash} | Pool: ${address}`);
       }
-
       // Schedule a batch write
       scheduleBatchWrite();
     } catch (error) {
