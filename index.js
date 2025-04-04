@@ -408,6 +408,11 @@ function startWebSocket() {
   attachWebSocketHandlers(ws);
 }
 
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+  console.log('Health ping received');
+});
+
 app.get('/', (req, res) => res.status(200).send('WebSocket service running'));
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
