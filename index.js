@@ -43,7 +43,7 @@ async function fetchWithRetry(method, params, retries = 3, delay = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(
-        "https://blockchain.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=${gcpApiKey}",
+        "https://blockchain.googleapis.com/v1/projects/mirax-beta/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=AIzaSyBHUjd0OL8Xj1HB-j12O_hxc8mdrOGRiRY",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -356,7 +356,7 @@ function attachWebSocketHandlers(ws) {
 
 function startWebSocket() {
   console.log('🚀 Starting WebSocket connection...');
-  const ws = new WebSocket("wss://blockchain.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=${gcpApiKey}");
+  const ws = new WebSocket("wss://blockchain.googleapis.com/v1/projects/mirax-beta/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=AIzaSyBHUjd0OL8Xj1HB-j12O_hxc8mdrOGRiRY");
   attachWebSocketHandlers(ws);
 }
 
