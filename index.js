@@ -7,10 +7,10 @@ const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 const gcpProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
 const gcpApiKey = process.env.GOOGLE_CLOUD_KEY;
 
-// Initialize Firestore with explicit credentials
+// Initialize Firestore with credentials
 const firestore = new Firestore({
   credentials: credentials,
-  projectId: credentials.project_id, // Optional, but ensures correct project
+  projectId: credentials.project_id,
 });
 const txCollection = firestore.collection('transfer_transactions');
 const lpCollection = firestore.collection('lp_and_transfers');
@@ -19,20 +19,20 @@ const port = process.env.PORT || 8080;
 
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const CURVE_SWAP_TOPIC = '0x8b3e96f2b889fa771c53c981b40daf005f63f637f1869f707052d15a3dd97140';
-const UNISWAP_SWAP_TOPIC = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67';
+
 
 // Addresses (lowercase for consistency in comparisons)
 const PYUSD_ADDRESS = '0x6c3ea9036406852006290770bedfcaba0e23a0e8'.toLowerCase();
 const CURVE_POOL_1 = '0x383e6b4437b59fff47b619cba855ca29342a8559'.toLowerCase();
 const CURVE_POOL_2 = '0x625e92624bc2d88619accc1788365a69767f6200'.toLowerCase();
-const UNISWAP_POOL = '0xDd2e0D86A45e4EF9bd490c2809E6405720cC357c'.toLowerCase();
+
 
 // Cache for block timestamps to reduce RPC calls
 const blockTimestampCache = new Map();
 
 // Batch writing configuration
 const BATCH_SIZE = 10;
-const WRITE_INTERVAL_MS = 5000; // 50 seconds
+const WRITE_INTERVAL_MS = 5000; // 5
 let pendingWrites = [];
 let writeTimeout = null;
 
@@ -208,7 +208,7 @@ async function batchWriteToFirestore() {
       await batchWriteToFirestore();
     }
   } catch (error) {
-    console.error("❌ Error writing batch to Firestore:", error);
+    console.error("Error writing batch to Firestore:", error);
     // Add failed events back to pendingWrites for retry
     pendingWrites.unshift(...eventsToWrite);
   }
@@ -271,21 +271,6 @@ function attachWebSocketHandlers(ws) {
       })
     );
 
-    // Subscribe to Uniswap Swap events
-    // ws.send(
-    //   JSON.stringify({
-    //     jsonrpc: "2.0",
-    //     id: 3,
-    //     method: "eth_subscribe",
-    //     params: [
-    //       "logs",
-    //       {
-    //         address: UNISWAP_POOL,
-    //         topics: [UNISWAP_SWAP_TOPIC],
-    //       },
-    //     ],
-    //   })
-    // );
   });
 
   ws.on("message", async (data) => {
@@ -350,18 +335,18 @@ function attachWebSocketHandlers(ws) {
       // Schedule a batch write
       scheduleBatchWrite();
     } catch (error) {
-      console.error("❌ Error processing WebSocket message:", error);
+      console.error("Error processing WebSocket message:", error);
     }
   });
 
   ws.on('error', (error) => {
-    console.error('❌ WebSocket error:', error.message);
-    console.log('🔄 Reconnecting due to error...');
+    console.error('WebSocket error:', error.message);
+    console.log('Reconnecting due to error...');
     ws.close();
   });
 
   ws.on('close', () => {
-    console.log('🔄 WebSocket closed, reconnecting...');
+    console.log('WebSocket closed, reconnecting...');
     if (writeTimeout) {
       clearTimeout(writeTimeout);
       writeTimeout = null;
@@ -375,7 +360,7 @@ function attachWebSocketHandlers(ws) {
 }
 
 function startWebSocket() {
-  console.log('🚀 Starting WebSocket connection...');
+  console.log('Starting WebSocket connection...');
   const ws = new WebSocket(`wss://blockchain.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=${gcpApiKey}`);
   attachWebSocketHandlers(ws);
 }
@@ -392,6 +377,4 @@ app.listen(port, () => {
 });
 
 
-// gcloud run deploy pyusd-websocket --image gcr.io/mirax-beta/pyusd-websocket --platform managed --region us-central1 --min-instances 1 --max-instances 1 --allow-unauthenticated
-
-// gcloud builds submit --tag gcr.io/mirax-beta/pyusd-websocket
+// flyio
