@@ -4,6 +4,9 @@ const express = require('express');
 
 const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
+const gcpProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+const gcpApiKey = process.env.GOOGLE_CLOUD_KEY;
+
 // Initialize Firestore with explicit credentials
 const firestore = new Firestore({
   credentials: credentials,
@@ -43,7 +46,7 @@ async function fetchWithRetry(method, params, retries = 3, delay = 1000) {
   for (let i = 0; i < retries; i++) {
     try {
       const response = await fetch(
-        "https://blockchain.googleapis.com/v1/projects/mirax-beta/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=AIzaSyBHUjd0OL8Xj1HB-j12O_hxc8mdrOGRiRY",
+        `https://blockchain.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=${gcpApiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -373,7 +376,7 @@ function attachWebSocketHandlers(ws) {
 
 function startWebSocket() {
   console.log('🚀 Starting WebSocket connection...');
-  const ws = new WebSocket("wss://blockchain.googleapis.com/v1/projects/mirax-beta/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=AIzaSyBHUjd0OL8Xj1HB-j12O_hxc8mdrOGRiRY");
+  const ws = new WebSocket(`wss://blockchain.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/endpoints/ethereum-mainnet/rpc?key=${gcpApiKey}`);
   attachWebSocketHandlers(ws);
 }
 
